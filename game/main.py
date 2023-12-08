@@ -60,6 +60,13 @@ plane_secondary = resize(plane_secondary, 70)
 plane_images.append(plane_primary)
 plane_images.append(plane_secondary)
 
+sound_on = pygame.image.load('src/sound/sound_on.png').convert_alpha()
+sound_on = resize(sound_on, 40)
+sound_off = pygame.image.load('src/sound/sound_on.png').convert_alpha()
+sound_off = resize(sound_off, 40)
+
+sound_state = True
+
 # Обработка изображений птиц
 colors = ['pink', 'grey', 'yellow']
 bird_images = {}
@@ -223,6 +230,14 @@ def pause():
                     pygame.quit()
                     quit()
 
+def redrawGameWindow():
+    if sound_state:
+        # изображение с включенным звуком в правом верхнем углу
+        screen.blit(sound_on, (750, 10))
+    else:
+        #  изображение с выключенным звуком
+        screen.blit(sound_off, (750, 10))
+
 # Создание групп персонажей
 player_grp = pygame.sprite.Group()
 core_grp = pygame.sprite.Group()
@@ -241,6 +256,8 @@ run_game = True
 while run_game:
 
     game_sound.play()
+    redrawGameWindow()
+
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run_game = False
@@ -275,6 +292,16 @@ while run_game:
         core_grp.add(core)
 
         last_core = pygame.time.get_ticks()
+
+    if keys[pygame.K_TAB]:
+        sound_state = not sound_state
+        if sound_state:
+            game_sound.set_volume(0.5)
+            core_sound.set_volume(0.5)
+        # если звук выключен
+        else:
+            game_sound.set_volume(0)
+            core_sound.set_volume(0)
     
     # создание птицы и реализация рандомного появления 
     # в промежутке от 0 до 1 секунд
@@ -341,6 +368,7 @@ while run_game:
         game_sound.stop()
         gameover_sound.play()
         clock.tick(FPS)
+
         for event in pygame.event.get():
 
             if event.type == pygame.QUIT:
@@ -349,6 +377,7 @@ while run_game:
         screen.fill('black')
         gameover_str = 'Play again (print Y or N)?'
         font = pygame.font.Font(pygame.font.get_default_font(), 24)
+        
         end_text = font.render(gameover_str, True, 'white')
         text_rect = end_text.get_rect()
         text_rect.center = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
@@ -358,12 +387,13 @@ while run_game:
 
         keys = pygame.key.get_pressed()
         if keys[K_y]:
-            # clear the sprite groups
+
+            game_sound.play()
+            gameover_sound.stop()
             player_grp.empty()
             core_grp.empty()
             bird_grp.empty()
 
-            # сброс игрока
             player = Player(x_player_position, y_player_position)
             player_grp.add(player)
 
