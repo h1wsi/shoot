@@ -15,7 +15,14 @@ FPS = 60
 
 # создание игрового окна
 screen = pygame.display.set_mode(SIZE)
+background = pygame.image.load('src/background.png').convert_alpha()
+
+# переменная для 
+background_scroll = 0
+
 clock = pygame.time.Clock()
+
+
 
 # Класс для создания модели игрока
 class Player(pygame.sprite.Sprite):
@@ -43,6 +50,15 @@ while run_game:
 
             run_game = False
     
+    # создание подвижного игрового фона
+    screen.blit(background, (0 - background_scroll, 0))
+    screen.blit(background, (SCREEN_WIDTH - background_scroll, 0))
+    background_scroll += 1
+
+    if background_scroll == SCREEN_WIDTH:
+        background_scroll = 0
+
+
     clock.tick(FPS)
     pygame.display.update()
 
