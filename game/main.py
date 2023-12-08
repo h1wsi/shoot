@@ -1,7 +1,6 @@
 
 import pygame
-import pygame.locals
-
+from pygame.locals import K_UP, K_DOWN, K_SPACE
 
 pygame.init()
 
@@ -10,9 +9,13 @@ SCREEN_WIDTH = 800
 SCREEN_HEIGHT = 500
 SIZE = (SCREEN_WIDTH, SCREEN_HEIGHT)
 
+# отступы от верхней и нижей частей экрана
 PADDING_Y = 50
 FPS = 60
+# установка минимальной разницы во времени между двумя выстрелами
+CORE_TIMER = 500
 
+last_core = pygame.time.get_ticks()
 clock = pygame.time.Clock()
 
 # функция для изменения размера изображения
@@ -22,6 +25,7 @@ def resize(image, new_width):
     new_size = (new_width, new_height)
 
     return pygame.transform.scale(image, new_size)
+
 
 # создание игрового окна
 screen = pygame.display.set_mode(SIZE)
@@ -70,7 +74,26 @@ class Player(pygame.sprite.Sprite):
 
 # Класс для создания выстрела
 class Core(pygame.sprite.Sprite):
-    pass
+    def __init__(self, x_position, y_position):
+
+        pygame.sprite.Sprite.__init__(self)
+        self.x_position = x_position
+        self.y_position = y_position
+
+        self.radius = 5
+        self.rect = pygame.rect.Rect(x_position, y_position, 10, 10)
+
+    def draw(self):
+        pygame.draw.circle(screen, 'yellow', (self.x_position, self.y_position), self.radius)
+
+    # реализация движения пули и удаления ее при достижении края игрового окна
+    def update(self):
+        self.x_position += 2
+        self.rect.x = self.x_position
+        self.rect.y = self.y_position
+
+        if self.x_position > SCREEN_WIDTH:
+            self.kill()
 
 # Класс для создания персонажей типа Bird
 class Bird(pygame.sprite.Sprite):
@@ -88,16 +111,33 @@ y_player_position = SCREEN_HEIGHT // 2
 player = Player(x_player_position, y_player_position)
 player_grp.add(player)
 
-
 # Создание цикла игры
 run_game = True
 while run_game:
 
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
-
             run_game = False
     
+    keys = pygame.key.get_pressed()
+
+    # взаимодействие с моделькой игрока через клавиатуру
+    if keys[K_UP] and player.rect.top > PADDING_Y:
+        player.y_position -= 2
+        player.image_angle = 15
+    elif keys[K_DOWN] and player.rect.bottom < SCREEN_HEIGHT - PADDING_Y:
+        player.y_position += 2
+        player.image_angle = -15
+
+    # выстрел посредством нажатия на пробел, реализация движения  пули
+    if keys[K_SPACE] and last_core + CORE_TIMER < pygame.time.get_ticks():
+        x_core_position = player.x_position + player.image.get_width()
+        y_core_position = player.y_position + player.image.get_height() // 2
+        core = Core(x_core_position, y_core_position)
+        core_grp.add(core)
+
+        last_core = pygame.time.get_ticks()
+
     # создание подвижного игрового фона
     screen.blit(background, (0 - background_scroll, 0))
     screen.blit(background, (SCREEN_WIDTH - background_scroll, 0))
@@ -109,6 +149,11 @@ while run_game:
     # изображение персонажа
     player_grp.update()
     player_grp.draw(screen)
+    
+    # отображение пули
+    core_grp.update()
+    for core in core_grp:
+        core.draw()
 
     clock.tick(FPS)
     pygame.display.update()
