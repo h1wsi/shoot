@@ -1,8 +1,9 @@
 
 import pygame
+import pygame.mixer
 import random
 import time
-from pygame.locals import K_UP, K_DOWN, K_SPACE, K_y, K_n, K_LEFT, K_RIGHT
+from pygame.locals import K_UP, K_DOWN, K_SPACE, K_y, K_n, K_LEFT, K_RIGHT, K_ESCAPE
 
 pygame.init()
 
@@ -17,6 +18,14 @@ PADDING_Y = 50
 FPS = 60
 # установка минимальной разницы во времени между двумя выстрелами
 CORE_TIMER = 500
+
+# wav
+core_sound = pygame.mixer.Sound("src/wav/shoot.wav")
+game_sound = pygame.mixer.Sound("src/wav/game_wav.wav")
+gameover_sound = pygame.mixer.Sound("src/wav/game_over.wav")
+
+core_sound.set_volume(0.9)
+game_sound.set_volume(0.6)
 
 last_core = pygame.time.get_ticks()
 new_bird = pygame.time.get_ticks()
@@ -199,6 +208,21 @@ class Rocket(pygame.sprite.Sprite):
         if self.x_position < 0:
             self.kill()
 
+# создани  паузы
+def pause():
+    paused = True
+    while paused:
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            if event.type == pygame.KEYDOWN:
+                if event.key == pygame.K_c:
+                    paused = False
+                elif event.key == pygame.K_q:
+                    pygame.quit()
+                    quit()
+
 # Создание групп персонажей
 player_grp = pygame.sprite.Group()
 core_grp = pygame.sprite.Group()
@@ -216,12 +240,16 @@ player_grp.add(player)
 run_game = True
 while run_game:
 
+    game_sound.play()
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             run_game = False
     
     keys = pygame.key.get_pressed()
 
+    if keys[K_ESCAPE]: 
+        pause()
+        
     # взаимодействие с моделькой игрока через клавиатуру
     if keys[K_UP] and player.rect.top > PADDING_Y:
         player.y_position -= 2
@@ -239,6 +267,8 @@ while run_game:
 
     # выстрел посредством нажатия на пробел, реализация движения  пули
     if keys[K_SPACE] and last_core + CORE_TIMER < pygame.time.get_ticks():
+        
+        core_sound.play()
         x_core_position = player.x_position + player.image.get_width()
         y_core_position = player.y_position + player.image.get_height() // 2
         core = Core(x_core_position, y_core_position)
@@ -308,7 +338,8 @@ while run_game:
 
     # проверка того, что игра закончена
     while player.lives == 0:
-
+        game_sound.stop()
+        gameover_sound.play()
         clock.tick(FPS)
         for event in pygame.event.get():
 
@@ -355,4 +386,3 @@ while run_game:
     pygame.display.update()
 
 pygame.quit()
-
